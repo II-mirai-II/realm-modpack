@@ -32,7 +32,7 @@ public sealed class LauncherState
 
 public sealed class RealmAppConfig
 {
-    public string GitHubOwner { get; set; } = "CHANGE-ME";
+    public string GitHubOwner { get; set; } = "II-mirai-II";
     public string GitHubRepository { get; set; } = "realm-modpack";
     public string GitHubAssetNameContains { get; set; } = "realm";
     public int MaximumRamMb { get; set; } = 4096;

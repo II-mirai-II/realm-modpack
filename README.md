@@ -48,8 +48,8 @@ Edite:
 
 ```json
 {
-  "GitHubOwner": "seu-usuario",
-  "GitHubRepository": "seu-repo-de-modpack",
+  "GitHubOwner": "II-mirai-II",
+  "GitHubRepository": "realm-modpack",
   "GitHubAssetNameContains": "realm",
   "MaximumRamMb": 4096,
   "MinimumRamMb": 1024,
@@ -57,7 +57,7 @@ Edite:
 }
 ```
 
-Use um repositório público para o modpack. Assim o `.exe` funciona em outros computadores sem configurar token, variável de ambiente ou credenciais.
+Esses valores já são os defaults do launcher. Use um repositório público para o modpack. Assim o `.exe` funciona em outros computadores sem configurar token, variável de ambiente ou credenciais.
 
 ## Publicar o modpack
 
