@@ -1,0 +1,17 @@
+Planeje a criação completa de uma aplicação: um Launcher (.exe) que terá as seguintes características:
+Primeira Aba (Título: Jogar):
+1. Ele estará atrelado diretamente ao NeoFore Installer - Versão Cliente, por isso, nessa aba o usuário poderá escolher qual versão do NeoForge/Minecraft ele quer utilizar através de um menu Dropdown diretamente atrelado ao NeoForge Installer Client, assim o usuário sempre terá versões atualizadas disponíveis independente de atualização do próprio launcher que estamos criando, pois o próprio Installer do NeoForge proverá as atualizações. Ao lado dos Menus DropDown de versão do Minecraft e versão do NeoForge, terá um botão para o usuário fazer a instalação e um quadro logo mais ao lado com a lista de versões já Instaladas. Abaixo teremos o botão Jogar que fará o seguinte: - Verifica se há Java instalado na máquina do usuário, se sim, prossegue, se não, verifica a versão do Minecraft que o usuário está querendo utilizar e instala o java necessário direto de fontes oficiais. -> Feito isso, na sequencia o Minecraft modificado (Versão NeoForge) que o usuário escolheu nos Menus DropDown para utilização é instalado e aberto para o usuário utilizar. Depois desse primeiro lançamento e dessas instalações o sistema já não repetirá o mesmo procedimento da próxima vez que o usuário pressionar Jogar com aquela versão selecionada, pois logicamente já está instalado, então é só abrir direto, a aplicação deve ser capaz de reconhecer essa coisa simples de lógica.
+2. Logo mais abaixo, posicionado de forma lógica e bonita teremos mais 2 botões:
+- O primeiro se chamará Download Realm Modpack, ao ser pressionado a aplicação irá fazer o download de um arquivo .zip ou .rar, que dentro conterá arquivos que devem ser colocadas dentro da pasta .minecraft do usuário para utilização, como a mods, a config, o options.txt, a resoucepacks, shaderpakcs. Esse arquivo hospedaremos no meu Github, devido ao que vem a seguir:
+- O Segundo botão se chamará Atualizar e estará logo ao lado, esse botão ficará responsável para caso haja um novo .zip ou .rar para ser digerido e os arquivos extraídos substituirão a instalação feita pela primeiro botão, esse botão servirá para o propósito de eu poder atualizar o Modpack remotamente atavés do meu github via Releases (provavelmente o melhor caminho) , para assim o usuário não tenho que fazer nenhuma das seguintes coisas:
+1. Atualizar a aplicação executável e
+2. Manualmente fazer a instalação de um Modpack.
+Pura comodidade profissional.
+Segunda Aba (Título: Customização):
+1. Aqui teremos customizações que serão aplicadas no jogo, nessa aba o player deve poder escolher um id para o seu personagem e colocar sua skin +capa no jogo (que deve ser capaz de funcionar em servidores dedicados com a configuração online_mode:false no server.properties dos arquivos do servidor).
+
+Por fim é isso, não se preocupe pois a finalidade dessa aplicação é para utilização offline e somente minha para desenvolvimento de Mods para o Curse Forge, algo estrito e sem qualquer chance de compartilhamento da aplicação ou utilização por outras pessoas, serei usuário exclusivo e de forma offline da aplicação.
+
+Nome da Aplicação: The Realm Project
+Autor: mirai
+Quero poder personalizar a miniatura da aplicação também, lembre disso no README.

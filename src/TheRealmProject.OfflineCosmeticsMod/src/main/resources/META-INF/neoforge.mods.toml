@@ -1,0 +1,27 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="All Rights Reserved"
+
+[[mods]]
+modId="therealmproject_cosmetics"
+version="1.0.0"
+displayName="The Realm Project Offline Cosmetics"
+authors="mirai"
+description='''Local offline skin/cape bridge for The Realm Project launcher.'''
+
+[[mixins]]
+config="therealmproject_cosmetics.mixins.json"
+
+[[dependencies.therealmproject_cosmetics]]
+modId="neoforge"
+type="required"
+versionRange="[21,)"
+ordering="NONE"
+side="CLIENT"
+
+[[dependencies.therealmproject_cosmetics]]
+modId="minecraft"
+type="required"
+versionRange="[1.21,)"
+ordering="NONE"
+side="CLIENT"

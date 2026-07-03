@@ -1,0 +1,11 @@
+<Project>
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Authors>mirai</Authors>
+    <Company>mirai</Company>
+    <Product>The Realm Project</Product>
+    <AssemblyCopyright>Copyright (c) mirai</AssemblyCopyright>
+  </PropertyGroup>
+</Project>

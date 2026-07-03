@@ -1,0 +1,16 @@
+bin/
+obj/
+.vs/
+.idea/
+*.user
+*.suo
+*.log
+
+src/TheRealmProject.OfflineCosmeticsMod/.gradle/
+src/TheRealmProject.OfflineCosmeticsMod/build/
+src/TheRealmProject.OfflineCosmeticsMod/run/
+
+*.zip
+*.rar
+*.jar
+!src/**/gradle-wrapper.jar
