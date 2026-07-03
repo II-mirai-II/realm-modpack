@@ -13,7 +13,7 @@ public sealed class ModpackService(RealmPaths paths, HttpClient httpClient, Laun
 
     public async Task<GitHubRelease?> GetLatestReleaseAsync(RealmAppConfig config, CancellationToken cancellationToken = default)
     {
-        if (config.GitHubOwner == "CHANGE-ME" || string.IsNullOrWhiteSpace(config.GitHubOwner) || string.IsNullOrWhiteSpace(config.GitHubRepository))
+        if (string.IsNullOrWhiteSpace(config.GitHubOwner) || string.IsNullOrWhiteSpace(config.GitHubRepository))
             return null;
 
         using var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.github.com/repos/{config.GitHubOwner}/{config.GitHubRepository}/releases/latest");
@@ -45,7 +45,7 @@ public sealed class ModpackService(RealmPaths paths, HttpClient httpClient, Laun
 
         if (!force && state.InstalledModpackRelease == release.TagName && state.InstalledModpackAsset == asset.Name)
         {
-            progress?.Report("Modpack ja esta atualizado.");
+            progress?.Report("Modpack já está atualizado.");
             return false;
         }
 

@@ -40,6 +40,7 @@ public partial class MainWindow : Window
     private bool _versionsReady;
     private bool _busy;
     private bool _minecraftRunning;
+    private bool _modpackInstalled;
     private bool _initializingRam;
     private bool _isDraggingPreview;
     private Point _lastPreviewPoint;
@@ -127,8 +128,7 @@ public partial class MainWindow : Window
                 AppendLog($"Erro ao carregar versões NeoForge: {ex.Message}");
             }
 
-            RefreshInstalledVersions();
-            UpdateActionStates();
+            await RefreshUiStateAsync();
             AppendLog("Pronto.");
         });
     }
@@ -136,6 +136,11 @@ public partial class MainWindow : Window
     private void MinecraftVersionCombo_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         RefreshNeoForgeFilter();
+        UpdateActionStates();
+    }
+
+    private void NeoForgeVersionCombo_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
         UpdateActionStates();
     }
 
@@ -244,7 +249,7 @@ public partial class MainWindow : Window
             var java = await _javaService.EnsureJavaAsync(NeoForgeService.RequiredJavaMajor(version.MinecraftVersion), _progress);
             await _neoForgeService.InstallClientAsync(version, java, _progress);
             await SaveSelectedVersionAsync(version);
-            RefreshInstalledVersions();
+            await RefreshUiStateAsync();
         });
     }
 
@@ -255,7 +260,7 @@ public partial class MainWindow : Window
             var version = RequireSelectedNeoForge();
             var java = await _javaService.EnsureJavaAsync(NeoForgeService.RequiredJavaMajor(version.MinecraftVersion), _progress);
             await _neoForgeService.InstallClientAsync(version, java, _progress);
-            RefreshInstalledVersions();
+            await RefreshUiStateAsync();
 
             var launchVersion = ResolveInstalledVersionId(version);
             if (launchVersion is null)
@@ -328,7 +333,7 @@ public partial class MainWindow : Window
         {
             _installationService.Uninstall(version);
             await ClearSelectionIfNeededAsync(version);
-            RefreshInstalledVersions();
+            await RefreshUiStateAsync();
             AppendLog($"{version.DisplayName} desinstalado.");
         });
     }
@@ -338,6 +343,7 @@ public partial class MainWindow : Window
         await RunUiTaskAsync(async () =>
         {
             await _modpackService.InstallOrUpdateLatestAsync(true, _progress);
+            await RefreshUiStateAsync();
             AppendLog("Modpack instalado.");
         });
     }
@@ -347,6 +353,7 @@ public partial class MainWindow : Window
         await RunUiTaskAsync(async () =>
         {
             var changed = await _modpackService.InstallOrUpdateLatestAsync(false, _progress);
+            await RefreshUiStateAsync();
             AppendLog(changed ? "Modpack atualizado." : "Nenhuma atualização encontrada.");
         });
     }
@@ -420,6 +427,22 @@ public partial class MainWindow : Window
             else
                 _installedMinecraftVersions.Add(version);
         }
+    }
+
+    private async Task RefreshUiStateAsync()
+    {
+        RefreshInstalledVersions();
+        await RefreshModpackStatusAsync();
+        UpdateActionStates();
+    }
+
+    private async Task RefreshModpackStatusAsync()
+    {
+        var state = await _stateService.LoadAsync();
+        _modpackInstalled = !string.IsNullOrWhiteSpace(state.InstalledModpackRelease);
+        ModpackVersionText.Text = _modpackInstalled
+            ? $"{state.InstalledModpackRelease} · {state.InstalledModpackAsset ?? "asset"}"
+            : "Não instalado";
     }
 
     private NeoForgeVersion RequireSelectedNeoForge()
@@ -520,11 +543,13 @@ public partial class MainWindow : Window
 
     private void UpdateActionStates()
     {
-        var hasSelectedVersion = _versionsReady && NeoForgeVersionCombo.SelectedItem is NeoForgeVersion;
-        InstallButton.IsEnabled = !_busy && hasSelectedVersion;
+        var selectedVersion = NeoForgeVersionCombo.SelectedItem as NeoForgeVersion;
+        var hasSelectedVersion = _versionsReady && selectedVersion is not null;
+        var selectedNeoForgeInstalled = selectedVersion is not null && ResolveInstalledVersionId(selectedVersion) is not null;
+        InstallButton.IsEnabled = !_busy && hasSelectedVersion && !selectedNeoForgeInstalled;
         PlayButton.IsEnabled = !_busy && !_minecraftRunning && hasSelectedVersion;
-        DownloadModpackButton.IsEnabled = !_busy;
-        UpdateModpackButton.IsEnabled = !_busy;
+        DownloadModpackButton.IsEnabled = !_busy && !_modpackInstalled;
+        UpdateModpackButton.IsEnabled = !_busy && _modpackInstalled;
         SaveProfileButton.IsEnabled = !_busy;
         RamSlider.IsEnabled = !_busy;
         MinecraftVersionCombo.IsEnabled = !_busy && _versionsReady;
@@ -970,162 +995,6 @@ public partial class MainWindow : Window
         public static FaceSet LeftLeg => new(new Rect(16, 52, 4, 12), new Rect(20, 52, 4, 12), new Rect(24, 52, 4, 12), new Rect(28, 52, 4, 12), new Rect(20, 48, 4, 4), new Rect(24, 48, 4, 4));
         public static FaceSet LeftLegLayer => new(new Rect(0, 52, 4, 12), new Rect(4, 52, 4, 12), new Rect(8, 52, 4, 12), new Rect(12, 52, 4, 12), new Rect(4, 48, 4, 4), new Rect(8, 48, 4, 4));
         public static FaceSet Cape => new(new Rect(0, 1, 1, 16), new Rect(1, 1, 10, 16), new Rect(11, 1, 1, 16), new Rect(12, 1, 10, 16), new Rect(1, 0, 10, 1), new Rect(11, 0, 10, 1));
-    }
-
-    private void SetSkinPreview(string? path)
-    {
-        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
-        {
-            SkinPreview.Source = null;
-            SkinPreviewPlaceholder.Visibility = Visibility.Visible;
-            return;
-        }
-
-        try
-        {
-            var bitmap = new BitmapImage();
-            bitmap.BeginInit();
-            bitmap.CacheOption = BitmapCacheOption.OnLoad;
-            bitmap.UriSource = new Uri(path);
-            bitmap.EndInit();
-            bitmap.Freeze();
-
-            SkinPreview.Source = RenderSkinPreview(bitmap);
-            SkinPreviewPlaceholder.Text = "Preview";
-            SkinPreviewPlaceholder.Visibility = Visibility.Collapsed;
-        }
-        catch (Exception ex)
-        {
-            SkinPreview.Source = null;
-            SkinPreviewPlaceholder.Text = "Skin inválida";
-            SkinPreviewPlaceholder.Visibility = Visibility.Visible;
-            AppendLog($"Preview da skin indisponível: {ex.Message}");
-        }
-    }
-
-    private static ImageSource RenderSkinPreview(BitmapSource skin)
-    {
-        const int canvasWidth = 360;
-        const int canvasHeight = 420;
-        const double modelScale = 10.8;
-        const double modelWidth = 16;
-        const double modelHeight = 32;
-        var skinMap = MinecraftSkinMap.Create(skin);
-        var visual = new DrawingVisual();
-
-        using (var context = visual.RenderOpen())
-        {
-            context.DrawRectangle(new SolidColorBrush(Color.FromRgb(8, 13, 19)), null, new Rect(0, 0, canvasWidth, canvasHeight));
-
-            var origin = new Point(
-                (canvasWidth - modelWidth * modelScale) / 2,
-                (canvasHeight - modelHeight * modelScale) / 2 - 4);
-
-            var shadowBrush = new SolidColorBrush(Color.FromArgb(90, 0, 0, 0));
-            context.DrawEllipse(shadowBrush, null, new Point(canvasWidth / 2.0, origin.Y + modelHeight * modelScale + 10), 86, 16);
-
-            Rect Model(double x, double y, double width, double height)
-                => new(origin.X + x * modelScale, origin.Y + y * modelScale, width * modelScale, height * modelScale);
-
-            DrawSkinPart(context, skinMap, new Rect(8, 8, 8, 8), Model(4, 0, 8, 8));
-            DrawSkinPart(context, skinMap, new Rect(20, 20, 8, 12), Model(4, 8, 8, 12));
-            DrawSkinPart(context, skinMap, new Rect(44, 20, 4, 12), Model(0, 8, 4, 12));
-            DrawSkinPart(context, skinMap, new Rect(36, 52, 4, 12), Model(12, 8, 4, 12), fallbackSource: new Rect(44, 20, 4, 12), flipFallback: true);
-            DrawSkinPart(context, skinMap, new Rect(4, 20, 4, 12), Model(4, 20, 4, 12));
-            DrawSkinPart(context, skinMap, new Rect(20, 52, 4, 12), Model(8, 20, 4, 12), fallbackSource: new Rect(4, 20, 4, 12), flipFallback: true);
-
-            if (skinMap.HasModernLayers)
-            {
-                DrawSkinPart(context, skinMap, new Rect(40, 8, 8, 8), Inflate(Model(4, 0, 8, 8), 0.55 * modelScale));
-                DrawSkinPart(context, skinMap, new Rect(20, 36, 8, 12), Inflate(Model(4, 8, 8, 12), 0.28 * modelScale));
-                DrawSkinPart(context, skinMap, new Rect(44, 36, 4, 12), Inflate(Model(0, 8, 4, 12), 0.25 * modelScale));
-                DrawSkinPart(context, skinMap, new Rect(52, 52, 4, 12), Inflate(Model(12, 8, 4, 12), 0.25 * modelScale));
-                DrawSkinPart(context, skinMap, new Rect(4, 36, 4, 12), Inflate(Model(4, 20, 4, 12), 0.22 * modelScale));
-                DrawSkinPart(context, skinMap, new Rect(4, 52, 4, 12), Inflate(Model(8, 20, 4, 12), 0.22 * modelScale));
-            }
-        }
-
-        var target = new RenderTargetBitmap(canvasWidth, canvasHeight, 96, 96, PixelFormats.Pbgra32);
-        target.Render(visual);
-        target.Freeze();
-        return target;
-    }
-
-    private static void DrawSkinPart(
-        DrawingContext context,
-        MinecraftSkinMap skinMap,
-        Rect source,
-        Rect target,
-        Rect? fallbackSource = null,
-        bool flipFallback = false)
-    {
-        if (!skinMap.Contains(source))
-        {
-            if (fallbackSource is not { } fallback || !skinMap.Contains(fallback))
-                return;
-
-            source = fallback;
-        }
-
-        var crop = skinMap.Crop(source);
-        if (flipFallback && fallbackSource is not null && source == fallbackSource.Value)
-            crop = new TransformedBitmap(crop, new ScaleTransform(-1, 1, crop.Width / 2, crop.Height / 2));
-
-        crop.Freeze();
-        context.DrawImage(crop, target);
-    }
-
-    private static Rect Inflate(Rect rect, double amount)
-    {
-        rect.Inflate(amount, amount);
-        return rect;
-    }
-
-    private sealed class MinecraftSkinMap
-    {
-        private MinecraftSkinMap(BitmapSource bitmap, double scale, double baseHeight)
-        {
-            Bitmap = bitmap;
-            Scale = scale;
-            BaseHeight = baseHeight;
-        }
-
-        public BitmapSource Bitmap { get; }
-        public double Scale { get; }
-        public double BaseHeight { get; }
-        public bool HasModernLayers => BaseHeight >= 64;
-
-        public static MinecraftSkinMap Create(BitmapSource bitmap)
-        {
-            if (bitmap.PixelWidth <= 0 || bitmap.PixelHeight <= 0)
-                throw new InvalidOperationException("A imagem de skin não possui dimensões válidas.");
-
-            var scale = bitmap.PixelWidth / 64.0;
-            if (scale <= 0 || Math.Abs(scale - Math.Round(scale)) > 0.001)
-                throw new InvalidOperationException("A skin deve usar largura equivalente a 64 pixels, como 64x64, 128x128, 64x32 ou 128x64.");
-
-            var baseHeight = bitmap.PixelHeight / scale;
-            if (Math.Abs(baseHeight - 64) > 0.001 && Math.Abs(baseHeight - 32) > 0.001)
-                throw new InvalidOperationException("A skin deve estar no formato Minecraft 64x64 ou legado 64x32.");
-
-            return new MinecraftSkinMap(bitmap, scale, baseHeight);
-        }
-
-        public bool Contains(Rect source)
-            => source.X >= 0
-               && source.Y >= 0
-               && source.Right <= 64
-               && source.Bottom <= BaseHeight;
-
-        public BitmapSource Crop(Rect source)
-        {
-            var rect = new Int32Rect(
-                (int)Math.Round(source.X * Scale),
-                (int)Math.Round(source.Y * Scale),
-                (int)Math.Round(source.Width * Scale),
-                (int)Math.Round(source.Height * Scale));
-            return new CroppedBitmap(Bitmap, rect);
-        }
     }
 
     [DllImport("user32.dll")]
